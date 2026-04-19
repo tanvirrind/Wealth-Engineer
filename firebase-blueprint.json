@@ -1,0 +1,36 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Core performance data and gamification state for a Wealth Engineer.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The unique identifier for the user." },
+        "xp": { "type": "integer", "description": "Total experience points earned." },
+        "level": { "type": "integer", "description": "Current engineering level." },
+        "streak": { "type": "integer", "description": "Current consecutive daily completion streak." },
+        "totalCompletions": { "type": "integer", "description": "Total number of habit completions." },
+        "lastCompletedDate": { "type": "string", "format": "date", "description": "The last date an action was performed (YYYY-MM-DD)." },
+        "badges": { "type": "array", "items": { "type": "string" }, "description": "List of awarded badge IDs." },
+        "selectedHabits": { "type": "array", "items": { "type": "string" }, "description": "IDs of the 3 active habits." },
+        "tracker": { "type": "object", "description": "Key-value pair of habit_day completion status." },
+        "reflections": {
+          "type": "object",
+          "properties": {
+            "tenX": { "type": "string" },
+            "energy": { "type": "string" },
+            "ideas": { "type": "string" }
+          }
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "xp", "level", "streak", "totalCompletions", "badges", "selectedHabits", "tracker", "reflections"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "The primary data store for each Wealth Engineer's habits and progress."
+    }
+  }
+}

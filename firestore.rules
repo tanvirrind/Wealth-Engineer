@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- Validation Blueprints ---
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['userId', 'xp', 'level', 'streak', 'totalCompletions', 'badges', 'selectedHabits', 'tracker', 'reflections', 'updatedAt'])
+        && data.keys().size() == 10
+        && data.userId == request.auth.uid
+        && data.xp is int && data.xp >= 0
+        && data.level is int && data.level > 0
+        && data.streak is int && data.streak >= 0
+        && data.totalCompletions is int && data.totalCompletions >= 0
+        && data.badges is list && data.badges.size() <= 10
+        && data.selectedHabits is list && data.selectedHabits.size() <= 3
+        && data.tracker is map
+        && data.reflections is map
+        && data.reflections.keys().hasAll(['tenX', 'energy', 'ideas'])
+        && data.reflections.keys().size() == 3
+        && data.updatedAt == request.time;
+    }
+
+    // --- Mappings ---
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      
+      allow create: if isOwner(userId) 
+        && isValidUserProfile(incoming());
+        
+      allow update: if isOwner(userId) 
+        && isValidUserProfile(incoming())
+        && incoming().userId == existing().userId; // Immutable ID
+        
+      allow delete: if isOwner(userId);
+    }
+  }
+}
